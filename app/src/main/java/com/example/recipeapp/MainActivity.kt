@@ -24,6 +24,7 @@ import com.example.recipeapp.ui.mealplanner.MealPlannerScreen
 import com.example.recipeapp.ui.mealplanner.MealPlannerViewModel
 import com.example.recipeapp.ui.theme.RecipeAppTheme
 import dagger.hilt.android.AndroidEntryPoint
+import com.example.recipeapp.ui.feed.FeedScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -167,10 +168,10 @@ fun HomeScreen(
         }
     ) { paddingValues ->
         when (selectedTab) {
-            0 -> HomeTab(
-                modifier = Modifier.padding(paddingValues),
-                userName = authState.user?.displayName ?: "User",
-                onNavigateToRecipeDetails = onNavigateToRecipeDetails
+            0 -> FeedScreen(
+                onRecipeClick = { recipeId ->
+                    onNavigateToRecipeDetails(recipeId)
+                }
             )
             1 -> {
                 Box(
