@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +23,8 @@ import com.example.recipeapp.domain.model.MealType
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealPlannerScreen(
-    viewModel: MealPlannerViewModel = hiltViewModel()
+    viewModel: MealPlannerViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit //
 ) {
     val state by viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -44,7 +46,12 @@ fun MealPlannerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Meal Planner") }
+                title = { Text("Meal Planner") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) { // <-- added back button
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

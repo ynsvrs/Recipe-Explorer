@@ -1,4 +1,5 @@
 package com.example.recipeapp.ui.auth
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recipeapp.domain.model.User
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber  // ← ADD THIS
 import javax.inject.Inject
 
 data class AuthState(
@@ -32,6 +34,7 @@ class AuthViewModel @Inject constructor(
 
     private fun checkAuthStatus() {
         val user = authRepository.getCurrentUser()
+        Timber.d("Checking auth status: user=${user?.email}")  // ← ADD THIS
         _authState.value = AuthState(
             user = user,
             isAuthenticated = user != null
@@ -40,16 +43,19 @@ class AuthViewModel @Inject constructor(
 
     fun signIn(email: String, password: String) {
         viewModelScope.launch {
+            Timber.d("Attempting sign in: email=$email")  // ← ADD THIS
             _authState.value = AuthState(isLoading = true)
 
             when (val result = authRepository.signIn(email, password)) {
                 is Resource.Success -> {
+                    Timber.d("Sign in successful: userId=${result.data?.id}")  // ← ADD THIS
                     _authState.value = AuthState(
                         user = result.data,
                         isAuthenticated = true
                     )
                 }
                 is Resource.Error -> {
+                    Timber.e("Sign in failed: ${result.message}")  // ← ADD THIS
                     _authState.value = AuthState(
                         error = result.message
                     )
@@ -63,16 +69,19 @@ class AuthViewModel @Inject constructor(
 
     fun signUp(email: String, password: String) {
         viewModelScope.launch {
+            Timber.d("Attempting sign up: email=$email")  // ← ADD THIS
             _authState.value = AuthState(isLoading = true)
 
             when (val result = authRepository.signUp(email, password)) {
                 is Resource.Success -> {
+                    Timber.d("Sign up successful: userId=${result.data?.id}")  // ← ADD THIS
                     _authState.value = AuthState(
                         user = result.data,
                         isAuthenticated = true
                     )
                 }
                 is Resource.Error -> {
+                    Timber.e("Sign up failed: ${result.message}")  // ← ADD THIS
                     _authState.value = AuthState(
                         error = result.message
                     )
@@ -85,6 +94,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun signOut() {
+        Timber.d("User signing out")  // ← ADD THIS
         authRepository.signOut()
         _authState.value = AuthState()
     }

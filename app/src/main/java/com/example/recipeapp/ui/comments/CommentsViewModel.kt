@@ -1,4 +1,5 @@
 package com.example.recipeapp.ui.comments
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recipeapp.domain.model.Comment
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber  // ← ADD THIS
 import javax.inject.Inject
 
 data class CommentsState(
@@ -26,22 +28,41 @@ class CommentsViewModel @Inject constructor(
     private val _state = MutableStateFlow(CommentsState())
     val state: StateFlow<CommentsState> = _state.asStateFlow()
 
+    private val maxRetries = 3 // automatic retry count
+
     fun loadComments(recipeId: Int) {
+        loadCommentsWithRetry(recipeId)
+    }
+
+    // Automatic retry implementation
+    private fun loadCommentsWithRetry(recipeId: Int) {
         viewModelScope.launch {
-            repository.getComments(recipeId).collect { result ->
-                when (result) {
-                    is Resource.Success -> {
-                        _state.value = CommentsState(
-                            comments = result.data ?: emptyList()
-                        )
-                    }
-                    is Resource.Error -> {
-                        _state.value = CommentsState(
-                            error = result.message
-                        )
-                    }
-                    is Resource.Loading -> {
-                        _state.value = CommentsState(isLoading = true)
+            var attempt = 0
+            var success = false
+
+            while (attempt < maxRetries && !success) {
+                attempt++
+                _state.value = _state.value.copy(isLoading = true)
+
+                repository.getComments(recipeId).collect { result ->
+                    when (result) {
+                        is Resource.Success -> {
+                            _state.value = CommentsState(comments = result.data ?: emptyList())
+                            success = true
+                        }
+                        is Resource.Error -> {
+                            _state.value = CommentsState(
+                                comments = _state.value.comments, // keep cached comments
+                                error = result.message
+                            )
+                            if (attempt < maxRetries) {
+                                val delayTime = 1000L * attempt // 1s, 2s, 3s
+                                kotlinx.coroutines.delay(delayTime)
+                            }
+                        }
+                        is Resource.Loading -> {
+                            _state.value = _state.value.copy(isLoading = true)
+                        }
                     }
                 }
             }
@@ -57,6 +78,7 @@ class CommentsViewModel @Inject constructor(
             when (val result = repository.addComment(recipeId, text)) {
                 is Resource.Success -> {
                     _state.value = _state.value.copy(isAddingComment = false)
+                    loadComments(recipeId) // refresh after adding
                 }
                 is Resource.Error -> {
                     _state.value = _state.value.copy(
@@ -82,6 +104,7 @@ class CommentsViewModel @Inject constructor(
     fun deleteComment(recipeId: Int, commentId: String) {
         viewModelScope.launch {
             repository.deleteComment(recipeId, commentId)
+            loadComments(recipeId) // refresh after deletion
         }
     }
 

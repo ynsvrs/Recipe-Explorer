@@ -1,4 +1,5 @@
 package com.example.recipeapp.ui.mealplanner
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recipeapp.domain.model.DayOfWeek
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class MealPlannerState(
@@ -33,15 +35,18 @@ class MealPlannerViewModel @Inject constructor(
     }
 
     private fun loadMealPlans() {
+        Timber.d("Loading meal plans")
         viewModelScope.launch {
             repository.getMealPlans().collect { result ->
                 when (result) {
                     is Resource.Success -> {
+                        Timber.d("Loaded ${result.data?.size ?: 0} meal plans")
                         _state.value = MealPlannerState(
                             mealPlans = result.data ?: emptyList()
                         )
                     }
                     is Resource.Error -> {
+                        Timber.e("Error loading meal plans: ${result.message}")
                         _state.value = MealPlannerState(
                             error = result.message
                         )
@@ -54,51 +59,21 @@ class MealPlannerViewModel @Inject constructor(
         }
     }
 
-    fun addMealPlan(
-        recipeId: Int,
-        recipeTitle: String,
-        recipeImage: String?,
-        day: DayOfWeek,
-        mealType: MealType
-    ) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
 
-            val mealPlan = MealPlan(
-                recipeId = recipeId,
-                recipeTitle = recipeTitle,
-                recipeImage = recipeImage,
-                day = day.displayName,
-                mealType = mealType.displayName
-            )
 
-            when (val result = repository.addMealPlan(mealPlan)) {
-                is Resource.Success -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        successMessage = "Meal plan added successfully"
-                    )
-                }
-                is Resource.Error -> {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        error = result.message
-                    )
-                }
-                is Resource.Loading -> {}
-            }
-        }
-    }
 
     fun deleteMealPlan(mealPlanId: String) {
+        Timber.d("Deleting meal plan: $mealPlanId")
         viewModelScope.launch {
             when (val result = repository.deleteMealPlan(mealPlanId)) {
                 is Resource.Success -> {
+                    Timber.d("Meal plan deleted successfully")
                     _state.value = _state.value.copy(
                         successMessage = "Meal plan deleted"
                     )
                 }
                 is Resource.Error -> {
+                    Timber.e("Failed to delete meal plan: ${result.message}")
                     _state.value = _state.value.copy(
                         error = result.message
                     )

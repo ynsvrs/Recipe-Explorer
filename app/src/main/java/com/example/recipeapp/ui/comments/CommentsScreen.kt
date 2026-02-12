@@ -114,6 +114,33 @@ fun CommentsScreen(
             ) {
                 CircularProgressIndicator()
             }
+        }
+        // Add this in the error state section
+        else if (state.error != null && state.comments.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = "Failed to load comments",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = state.error ?: "Unknown error",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Button(onClick = { viewModel.loadComments(recipeId) }) {
+                        Text("Retry")
+                    }
+                }
+            }
         } else if (state.comments.isEmpty()) {
             Box(
                 modifier = Modifier

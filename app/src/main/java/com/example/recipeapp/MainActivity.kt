@@ -98,15 +98,17 @@ fun RecipeApp(
                     currentScreen = Screen.COMMENTS
                 },
                 onAddToMealPlan = { recipeId, recipeTitle, recipeImage, day, mealType ->
-                    // This is handled by MealPlannerViewModel
-                    // Just show a success message
+                    // TODO: add recipe to MealPlannerViewModel here
                     currentScreen = Screen.MEAL_PLANNER
                 }
             )
         }
 
         Screen.MEAL_PLANNER -> {
-            MealPlannerScreen()
+            MealPlannerScreen(
+                viewModel = hiltViewModel(), // Provide ViewModel
+                onNavigateBack = { currentScreen = Screen.HOME } // <-- added lambda
+            )
         }
 
         Screen.COMMENTS -> {
@@ -180,7 +182,10 @@ fun HomeScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    MealPlannerScreen()
+                    MealPlannerScreen(
+                        viewModel = hiltViewModel(),
+                        onNavigateBack = { selectedTab = 0 } // <-- added lambda
+                    )
                 }
             }
             2 -> ProfileTab(
@@ -192,6 +197,7 @@ fun HomeScreen(
     }
 }
 
+// HomeTab and ProfileTab stay unchanged
 @Composable
 fun HomeTab(
     modifier: Modifier = Modifier,

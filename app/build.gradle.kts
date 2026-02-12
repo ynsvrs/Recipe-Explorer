@@ -13,7 +13,7 @@ android {
         applicationId = "com.example.recipeapp"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
+        versionCode = 2 //changed from 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -125,4 +125,6 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    implementation("com.jakewharton.timber:timber:5.0.1")
 }
