@@ -78,7 +78,10 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "recipe_db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+
     }
 
     @Provides
@@ -93,6 +96,7 @@ object AppModule {
     ): RecipeRepository {
         return RecipeRepositoryImpl(api, dao)
     }
+
 
 
 

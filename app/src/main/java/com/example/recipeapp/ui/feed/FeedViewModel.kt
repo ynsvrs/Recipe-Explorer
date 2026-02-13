@@ -15,6 +15,7 @@ class FeedViewModel @Inject constructor(
 
     private var currentPage = 0
     private var currentQuery: String? = null
+    private var isLoadingMore = false
 
     private val _uiState = MutableStateFlow(FeedUiState())
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
@@ -29,17 +30,21 @@ class FeedViewModel @Inject constructor(
             repository.getRecipes()
                 .collect { recipes ->
                     _uiState.update {
-                        it.copy(recipes = recipes)
+                        it.copy(
+                            recipes = recipes,
+                            isEndReached = recipes.isEmpty()
+                        )
                     }
                 }
         }
     }
 
     fun loadNextPage() {
-        if (_uiState.value.isLoading || _uiState.value.isEndReached) return
+        if (isLoadingMore || _uiState.value.isEndReached) return
 
         viewModelScope.launch {
             try {
+                isLoadingMore = true
                 _uiState.update { it.copy(isLoading = true, error = null) }
 
                 repository.fetchRecipes(
@@ -55,9 +60,11 @@ class FeedViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message
+                        error = e.message ?: "Unknown error"
                     )
                 }
+            } finally {
+                isLoadingMore = false
             }
         }
     }
@@ -65,7 +72,7 @@ class FeedViewModel @Inject constructor(
     fun refresh() {
         currentPage = 0
         viewModelScope.launch {
-            _uiState.update { it.copy(recipes = emptyList()) }
+            _uiState.update { it.copy(recipes = emptyList(), isEndReached = false) }
             loadNextPage()
         }
     }
@@ -75,4 +82,10 @@ class FeedViewModel @Inject constructor(
         currentPage = 0
         refresh()
     }
+    fun toggleFavorite(recipeId: Int, isFavorite: Boolean) {
+        viewModelScope.launch {
+            repository.toggleFavorite(recipeId, isFavorite)
+        }
+    }
+
 }

@@ -3,13 +3,16 @@ package com.example.recipeapp.ui.feed
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+
 
 @Composable
 fun FeedScreen(
@@ -17,102 +20,80 @@ fun FeedScreen(
     viewModel: FeedViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    var searchQuery by remember { mutableStateOf("") }
 
-        when {
-            state.isLoading && state.recipes.isEmpty() -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
+    LaunchedEffect(searchQuery) {
+        snapshotFlow { searchQuery }
+            .debounce(500)
+            .distinctUntilChanged()
+            .collectLatest { query ->
+                viewModel.search(query)
             }
+    }
 
-            state.error != null && state.recipes.isEmpty() -> {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = state.error ?: "Unknown error")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { viewModel.loadNextPage() }) {
-                        Text("Retry")
-                    }
-                }
-            }
-
-            state.recipes.isEmpty() -> {
-                Text(
-                    text = "No recipes found",
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp)
-                ) {
-                    itemsIndexed(state.recipes) { index, recipe ->
-
-                        RecipeItem(
-                            recipe = recipe,
-                            onClick = { onRecipeClick(recipe.id) }
-                        )
-
-                        if (index >= state.recipes.lastIndex - 1) {
-                            viewModel.loadNextPage()
-                        }
-                    }
-
-                    if (state.isLoading) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
-                    }
-                }
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.collect { lastVisibleIndex ->
+            if (lastVisibleIndex == state.recipes.lastIndex) {
+                viewModel.loadNextPage()
             }
         }
     }
-}
 
-@Composable
-fun RecipeItem(
-    recipe: com.example.recipeapp.domain.model.Recipe,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 12.dp)
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            placeholder = { Text("Search recipes...") }
+        )
+
+        if (state.error != null) {
+            Text(
+                text = state.error ?: "",
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-            recipe.image?.let {
-                AsyncImage(
-                    model = it,
-                    contentDescription = recipe.title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
+            itemsIndexed(state.recipes) { _, recipe ->
+                RecipeItem(
+                    recipe = recipe,
+                    onClick = { onRecipeClick(recipe.id) },
+                    onFavoriteClick = {
+                        viewModel.toggleFavorite(recipe.id, !recipe.isFavorite)
+                    }
                 )
+
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = recipe.title,
-                style = MaterialTheme.typography.titleMedium
-            )
+            if (state.isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
         }
     }
 }

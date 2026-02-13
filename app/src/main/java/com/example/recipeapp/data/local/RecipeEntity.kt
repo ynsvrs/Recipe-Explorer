@@ -8,5 +8,6 @@ data class RecipeEntity(
     @PrimaryKey val id: Int,
     val title: String,
     val image: String,
-    val page: Int
+    val page: Int,
+    val isFavorite: Boolean = false
 )

@@ -57,5 +57,27 @@ class RecipeRepositoryImpl @Inject constructor(
 
         dao.insertAll(entities)
     }
+    override fun getFavoriteRecipes(): Flow<List<Recipe>> {
+        return dao.getFavoriteRecipes().map { entities ->
+            entities.map {
+                Recipe(
+                    id = it.id,
+                    title = it.title,
+                    image = it.image,
+                    summary = null,
+                    readyInMinutes = null,
+                    servings = null,
+                    extendedIngredients = null,
+                    instructions = null,
+                    isFavorite = true
+                )
+            }
+        }
+    }
+
+    override suspend fun toggleFavorite(recipeId: Int, isFavorite: Boolean) {
+        dao.updateFavorite(recipeId, isFavorite)
+    }
+
 
 }

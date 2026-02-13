@@ -11,4 +11,8 @@ interface RecipeRepository {
         page: Int,
         query: String?
     )
+    fun getFavoriteRecipes(): Flow<List<Recipe>>
+
+    suspend fun toggleFavorite(recipeId: Int, isFavorite: Boolean)
+
 }
