@@ -89,4 +89,45 @@ class MealPlannerViewModel @Inject constructor(
             successMessage = null
         )
     }
+
+    fun addMealPlan(
+        recipeId: Int,
+        recipeTitle: String,
+        recipeImage: String?,
+        day: DayOfWeek,
+        mealType: MealType
+    ) {
+        viewModelScope.launch {
+
+            val mealPlan = MealPlan(
+                recipeId = recipeId,
+                recipeTitle = recipeTitle,
+                recipeImage = recipeImage,
+                day = day.displayName,
+                mealType = mealType.displayName
+            )
+
+            when (val result = repository.addMealPlan(mealPlan)) {
+
+                is Resource.Success -> {
+                    // Show success
+                    _state.value = _state.value.copy(
+                        successMessage = "Meal plan added successfully"
+                    )
+
+                    loadMealPlans()
+                }
+
+                is Resource.Error -> {
+                    _state.value = _state.value.copy(
+                        error = result.message
+                    )
+                }
+
+                is Resource.Loading -> {}
+            }
+        }
+    }
+
+
 }

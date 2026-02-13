@@ -16,8 +16,10 @@ import com.example.recipeapp.ui.auth.AuthScreen
 import com.example.recipeapp.ui.auth.AuthViewModel
 import com.example.recipeapp.ui.comments.CommentsScreen
 import com.example.recipeapp.ui.details.RecipeDetailsScreen
+import com.example.recipeapp.ui.favorites.FavoritesScreen
 import com.example.recipeapp.ui.feed.FeedScreen
 import com.example.recipeapp.ui.mealplanner.MealPlannerScreen
+import com.example.recipeapp.ui.mealplanner.MealPlannerViewModel
 import com.example.recipeapp.ui.profile.ProfileScreen
 import com.example.recipeapp.ui.theme.RecipeAppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -86,6 +88,8 @@ fun RecipeApp(
         }
 
         AppScreen.RECIPE_DETAILS -> {
+            val mealPlannerViewModel: MealPlannerViewModel = hiltViewModel() // <-- inject here
+
             RecipeDetailsScreen(
                 recipeId = selectedRecipeId,
                 onNavigateBack = {
@@ -96,12 +100,19 @@ fun RecipeApp(
                     selectedRecipeName = recipeName
                     currentScreen = AppScreen.COMMENTS
                 },
-                onAddToMealPlan = { _, _, _, _, _ ->
-                    // Just go back to main, meal plan auto-updates
+                onAddToMealPlan = { recipeId, recipeTitle, recipeImage, day, mealType ->
+                    mealPlannerViewModel.addMealPlan(
+                        recipeId,
+                        recipeTitle,
+                        recipeImage,
+                        day,
+                        mealType
+                    )
                     currentScreen = AppScreen.MAIN
                 }
             )
         }
+
 
         AppScreen.COMMENTS -> {
             CommentsScreen(
@@ -141,24 +152,27 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
+                    icon = { Icon(Icons.Default.Favorite, "Favorites") },
+                    label = { Text("Favorites") }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 3,
+                    onClick = { selectedTab = 3 },
                     icon = { Icon(Icons.Default.Person, "Profile") },
                     label = { Text("Profile") }
                 )
             }
         }
-    ) { paddingValues ->
+    )
+    { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (selectedTab) {
-                0 -> FeedScreen(
-                    onRecipeClick = onNavigateToRecipeDetails  // ← Uses your FeedScreen
-                )
-                1 -> MealPlannerScreen(
-                    onNavigateBack = { selectedTab = 0 }
-                )
-                2 -> ProfileScreen(
-                    onSignOut = onSignOut
-                )
+                0 -> FeedScreen(onRecipeClick = onNavigateToRecipeDetails)
+                1 -> MealPlannerScreen(onNavigateBack = { selectedTab = 0 })
+                2 -> FavoritesScreen(onRecipeClick = onNavigateToRecipeDetails) // <-- new
+                3 -> ProfileScreen(onSignOut = onSignOut)
             }
         }
+
     }
-}
+    }

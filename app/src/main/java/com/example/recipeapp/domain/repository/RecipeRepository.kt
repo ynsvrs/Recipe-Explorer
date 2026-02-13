@@ -11,8 +11,10 @@ interface RecipeRepository {
         page: Int,
         query: String?
     )
+
+    suspend fun getRecipeDetails(id: Int): Recipe
+
     fun getFavoriteRecipes(): Flow<List<Recipe>>
 
     suspend fun toggleFavorite(recipeId: Int, isFavorite: Boolean)
-
 }

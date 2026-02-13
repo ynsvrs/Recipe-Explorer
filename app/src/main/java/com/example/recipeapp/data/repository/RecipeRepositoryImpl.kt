@@ -42,7 +42,7 @@ class RecipeRepositoryImpl @Inject constructor(
             query = query,
             number = 20,
             offset = offset,
-            apiKey = "94797644d51140958bd1ba284a7e3566"
+            apiKey = "b66c8c6ae6cc4e4f876c6a93f9320833"
 
         )
 
@@ -79,5 +79,32 @@ class RecipeRepositoryImpl @Inject constructor(
         dao.updateFavorite(recipeId, isFavorite)
     }
 
+    override suspend fun getRecipeDetails(id: Int): Recipe {
+
+        val response = api.getRecipeDetails(
+            id = id,
+            apiKey = "b66c8c6ae6cc4e4f876c6a93f9320833"
+        )
+
+        return Recipe(
+            id = response.id,
+            title = response.title,
+            image = response.image,
+            summary = response.summary,
+            readyInMinutes = response.readyInMinutes,
+            servings = response.servings,
+            instructions = response.instructions,
+            extendedIngredients = response.extendedIngredients?.map {
+                com.example.recipeapp.domain.model.Ingredient(
+                    id = it.id,
+                    name = it.name,
+                    amount = it.amount,
+                    unit = it.unit,
+                    original = it.original
+                )
+            },
+            isFavorite = false
+        )
+    }
 
 }

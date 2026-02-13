@@ -106,14 +106,6 @@ fun ProfileScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "📊 Partner B Complete",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "✅ Authentication\n✅ Recipe Details\n✅ Meal Planner\n✅ Comments\n✅ Favorites",
-                        style = MaterialTheme.typography.bodySmall
-                    )
                 }
             }
         }
