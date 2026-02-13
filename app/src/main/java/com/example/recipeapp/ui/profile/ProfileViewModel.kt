@@ -26,39 +26,29 @@ class ProfileViewModel @Inject constructor(
     val state: StateFlow<ProfileState> = _state.asStateFlow()
 
     init {
-        observeRecipes()
-        observeFavorites()
-        observeMealPlans()
+        observeStatistics()
     }
 
-    private fun observeRecipes() {
+    private fun observeStatistics() {
         viewModelScope.launch {
-            recipeRepository.getRecipes().collect { recipes ->
-                _state.update {
-                    it.copy(recipesCount = recipes.size)
-                }
-            }
-        }
-    }
 
-    private fun observeFavorites() {
-        viewModelScope.launch {
-            recipeRepository.getFavoriteRecipes().collect { favorites ->
-                _state.update {
-                    it.copy(favoritesCount = favorites.size)
-                }
-            }
-        }
-    }
+            combine(
+                recipeRepository.getRecipes(),
+                recipeRepository.getFavoriteRecipes(),
+                mealPlanRepository.getMealPlans()
+            ) { recipes, favorites, plansResult ->
 
-    private fun observeMealPlans() {
-        viewModelScope.launch {
-            mealPlanRepository.getMealPlans().collect { result ->
-                if (result is Resource.Success) {
-                    _state.update {
-                        it.copy(plansCount = result.data?.size ?: 0)
-                    }
-                }
+                val plansCount = if (plansResult is Resource.Success) {
+                    plansResult.data?.size ?: 0
+                } else 0
+
+                ProfileState(
+                    recipesCount = recipes.size,
+                    favoritesCount = favorites.size,
+                    plansCount = plansCount
+                )
+            }.collect { newState ->
+                _state.value = newState
             }
         }
     }

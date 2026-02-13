@@ -24,4 +24,8 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE isFavorite = 1")
     fun getFavoriteRecipes(): Flow<List<RecipeEntity>>
 
+
+
+
+
 }

@@ -40,7 +40,7 @@ class FeedViewModel @Inject constructor(
     }
 
     fun loadNextPage() {
-        if (isLoadingMore || _uiState.value.isEndReached) return
+        if (_uiState.value.isLoading || isLoadingMore) return
 
         viewModelScope.launch {
             try {
@@ -54,20 +54,19 @@ class FeedViewModel @Inject constructor(
 
                 currentPage++
 
-                _uiState.update { it.copy(isLoading = false) }
-
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
                         error = e.message ?: "Unknown error"
                     )
                 }
             } finally {
+                _uiState.update { it.copy(isLoading = false) }
                 isLoadingMore = false
             }
         }
     }
+
 
     fun refresh() {
         currentPage = 0
