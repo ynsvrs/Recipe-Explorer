@@ -3,11 +3,14 @@ package com.example.recipeapp.ui.details
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.recipeapp.domain.model.Recipe
+import com.example.recipeapp.domain.repository.FavoritesRepository
+import com.example.recipeapp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class RecipeDetailsState(
@@ -19,31 +22,63 @@ data class RecipeDetailsState(
 
 @HiltViewModel
 class RecipeDetailsViewModel @Inject constructor(
-    // TODO: Add RecipeRepository when Partner A provides it
+    private val favoritesRepository: FavoritesRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(RecipeDetailsState())
     val state: StateFlow<RecipeDetailsState> = _state.asStateFlow()
 
     fun loadRecipe(recipeId: Int) {
+        Timber.d("Loading recipe details: recipeId=$recipeId")
         viewModelScope.launch {
             _state.value = RecipeDetailsState(isLoading = true)
-            // TODO: Load recipe from repository
-            // For now, mock data
+
+            // Check if recipe is favorited
+            val isFavorite = favoritesRepository.isFavorite(recipeId)
+
+            // Mock data (Partner A will replace with API call)
+            Timber.d("Using mock recipe data")
             _state.value = RecipeDetailsState(
                 recipe = createMockRecipe(recipeId),
-                isLoading = false
+                isLoading = false,
+                isFavorite = isFavorite
             )
         }
     }
 
     fun toggleFavorite() {
+        val currentIsFavorite = _state.value.isFavorite
+        val recipeId = _state.value.recipe?.id ?: return
+
+        Timber.d("Toggling favorite: $currentIsFavorite -> ${!currentIsFavorite}")
+
         viewModelScope.launch {
-            val currentState = _state.value
-            _state.value = currentState.copy(
-                isFavorite = !currentState.isFavorite
+            // Optimistically update UI
+            _state.value = _state.value.copy(
+                isFavorite = !currentIsFavorite
             )
-            // TODO: Save to Firebase favorites
+
+            // Persist to Firebase
+            val result = if (currentIsFavorite) {
+                favoritesRepository.removeFavorite(recipeId)
+            } else {
+                favoritesRepository.addFavorite(recipeId)
+            }
+
+            // Handle errors
+            when (result) {
+                is Resource.Success -> {
+                    Timber.d("Favorite toggled successfully")
+                }
+                is Resource.Error -> {
+                    Timber.e("Failed to toggle favorite: ${result.message}")
+                    // Revert on error
+                    _state.value = _state.value.copy(
+                        isFavorite = currentIsFavorite
+                    )
+                }
+                is Resource.Loading -> {}
+            }
         }
     }
 

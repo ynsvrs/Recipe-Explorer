@@ -23,6 +23,8 @@ import com.example.recipeapp.data.local.AppDatabase
 import com.example.recipeapp.data.local.RecipeDao
 import com.example.recipeapp.domain.repository.RecipeRepository
 import com.example.recipeapp.data.repository.RecipeRepositoryImpl
+import com.example.recipeapp.domain.repository.FavoritesRepository
+import com.example.recipeapp.data.repository.FavoritesRepositoryImpl
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -97,7 +99,12 @@ object AppModule {
         return RecipeRepositoryImpl(api, dao)
     }
 
-
-
-
+    @Provides
+    @Singleton
+    fun provideFavoritesRepository(
+        database: FirebaseDatabase,
+        auth: FirebaseAuth
+    ): FavoritesRepository = FavoritesRepositoryImpl(database, auth)
 }
+
+
